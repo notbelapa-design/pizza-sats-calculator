@@ -8,7 +8,8 @@
   body {
     margin:0;
     font-family:'Montserrat', sans-serif;
-    background:linear-gradient(135deg,#1f3a93,#2ecc71);
+    /* multi-stop gradient for richer aesthetic */
+    background:linear-gradient(135deg,#1f3a93 0%,#2ecc71 50%,#f39c12 100%);
     color:#fff;
     padding:20px;
   }
@@ -23,9 +24,11 @@
     border-radius:12px;
     flex:1 1 280px;
     min-width:260px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.2);
-    backdrop-filter:blur(8px);
-    -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 6px 24px rgba(0,0,0,0.25);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    /* subtle border for separation */
+    border:1px solid rgba(255,255,255,0.2);
   }
 
   /* Button style used for the faucet claim button */
@@ -75,7 +78,12 @@
     <p>Available sats on market: <span class="value" id="meAvailable"></span></p>
     <p>Floor price per listing: <span class="value" id="meFloor"></span> BTC</p>
     <p>Price per sat (approx): <span class="value" id="mePricePerSat"></span> USD</p>
-    <p>People per available pizza sat: <span class="value" id="peoplePerAvailable"></span></p>
+    <!-- Market valuation metrics -->
+    <p>Total listed value (BTC): <span class="value" id="meTotalValue"></span> BTC</p>
+    <p>Total listed value (USD): <span class="value" id="meTotalValueUsd"></span></p>
+    <p>Listed supply share: <span class="value" id="meSupplyShare"></span>%</p>
+    
+    <!-- Link to Magic Eden -->
     <p><a href="https://magiceden.io/ordinals/marketplace/rare-sats?selectedAttributes=%7B%22satributes%22%3A%5B%7B%22value%22%3A%22Pizza%22,%22label%22%3A%22Pizza%22,%22imageElement%22%3A%7B%22key%22:null,%22ref%22:null,%22props%22%3A%7B%22satribute%22%3A%22Pizza%22,%22className%22%3A%22size-full%22%7D,%22_owner%22:null%7D,%22floor%22%3A%22%3C+0.00001%22,%22listedPercentage%22:%22%22%7D%5D%7D" target="_blank">View on Magic Eden</a></p>
   </div>
   <div class="card">
@@ -88,7 +96,7 @@
   <div class="card">
     <h2>Fun Facts</h2>
     <p>Pizza sats per person: <span class="value" id="satsPerPerson"></span></p>
-    <p>People per pizza sat: <span class="value" id="peoplePerSat"></span></p>
+    <!-- Removed people per pizza sat metric -->
     <p>Value of 100 sats: <span class="value" id="valueOf100"></span></p>
     <p>Years to collect them all (1 sat/day): <span class="value" id="collectYears"></span> years</p>
   </div>
@@ -136,15 +144,20 @@ const meSatsPerLabel = document.getElementById('meSatsPer');
 const meAvailableLabel = document.getElementById('meAvailable');
 const meFloorLabel = document.getElementById('meFloor');
 const mePricePerSatLabel = document.getElementById('mePricePerSat');
-const peoplePerAvailableLabel = document.getElementById('peoplePerAvailable');
+// const peoplePerAvailableLabel = null; // removed from UI
 const priceRange = document.getElementById('priceRange');
 const priceValueLabel = document.getElementById('priceValueLabel');
 const marketValueLabel = document.getElementById('marketValueLabel');
 const valuePerPerson = document.getElementById('valuePerPerson');
 const satsPerPerson = document.getElementById('satsPerPerson');
-const peoplePerSat = document.getElementById('peoplePerSat');
+// const peoplePerSat = null; // removed from UI
 const valueOf100 = document.getElementById('valueOf100');
 const collectYears = document.getElementById('collectYears');
+
+// Magic Eden valuation elements
+const meTotalValueLabel = document.getElementById('meTotalValue');
+const meTotalValueUsdLabel = document.getElementById('meTotalValueUsd');
+const meSupplyShareLabel = document.getElementById('meSupplyShare');
 
 // Bitcoin price and faucet elements
 const btcPriceValue = document.getElementById('btcPriceValue');
@@ -173,8 +186,17 @@ function update() {
   const btcValue = btcPrice !== null ? btcPrice : BTC_USD;
   const pricePerSatApprox = (ME_FLOOR_BTC * btcValue) / ME_SATS_PER;
   mePricePerSatLabel.textContent = '$' + pricePerSatApprox.toFixed(4);
-  const peoplePerAvailable = WORLD_POP / meAvailable;
-  peoplePerAvailableLabel.textContent = peoplePerAvailable.toFixed(2);
+  // compute market totals and supply share for Magic Eden
+  const meTotalValueBtc = ME_LISTINGS * ME_FLOOR_BTC;
+  // show total value in BTC with up to 6 decimals
+  meTotalValueLabel.textContent = numberWithCommas(parseFloat(meTotalValueBtc.toFixed(6)));
+  // total listed value in USD using current BTC price
+  const meTotalValueUsd = meTotalValueBtc * btcValue;
+  meTotalValueUsdLabel.textContent = '$' + numberWithCommas(Math.round(meTotalValueUsd));
+  // supply share relative to the total pizza sat supply
+  const meSupplyShare = (meAvailable / SUPPLY) * 100;
+  meSupplyShareLabel.textContent = meSupplyShare.toFixed(6);
+  // removed peoplePerAvailable metric
 
   // price slider
   const price = parseFloat(priceRange.value);
@@ -186,7 +208,7 @@ function update() {
 
   const satsPerPersonValue = remaining / WORLD_POP;
   satsPerPerson.textContent = satsPerPersonValue.toFixed(2);
-  peoplePerSat.textContent = (WORLD_POP / remaining).toFixed(2);
+  // removed peoplePerSat metric
 
   const value100 = 100 * price;
   valueOf100.textContent = '$' + value100.toFixed(2);
