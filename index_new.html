@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pizza Sats Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin:0;
+    font-family:'Montserrat', sans-serif;
+    background:linear-gradient(135deg,#1f3a93,#2ecc71);
+    color:#fff;
+    padding:20px;
+  }
+  h1 {font-size:2.5rem; margin-bottom:0.5rem;}
+  p {max-width:700px; line-height:1.6; margin-bottom:1rem;}
+  .container {max-width:900px; margin:auto;}
+  .cards {display:flex; flex-wrap:wrap; gap:20px;}
+  .card {background:rgba(255,255,255,0.1); padding:20px; border-radius:12px; flex:1 1 280px; min-width:260px;}
+  .card h2 {font-size:1.2rem; margin-bottom:0.5rem;}
+  .value {font-size:1.5rem; font-weight:600; color:#f1c40f;}
+  label {display:block; margin-top:10px;}
+  input[type=range] {width:100%; margin-top:5px;}
+  footer {margin-top:2rem; font-size:0.8rem;}
+  a {color:#f39c12;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Pizza Sats Insights</h1>
+  <p>Explore the scarcity and value of <strong>pizza sats</strong>—the satoshis spent in the legendary 10 000 BTC pizza transaction on May 22 2010【420842018258477†L108-L112】. There are 1 trillion pizza sats in existence【967502688293053†L12-L23】. Use the sliders to adjust assumptions, view market stats and see how they stack up per person.</p>
+
+<div class="cards">
+  <div class="card">
+    <h2>Lost Supply (%)</h2>
+    <div class="value" id="lostPercentLabel"></div>
+    <input id="lostRange" type="range" min="0" max="30" step="1" value="15">
+    <p>Estimated lost bitcoins range 11–18 % 【749628174090867†L210-L219】. Adjust to estimate lost pizza sats.</p>
+    <h3>Remaining pizza sats</h3>
+    <div class="value" id="remainingCount"></div>
+    <p id="marketShareLabel"></p>
+  </div>
+  <div class="card">
+    <h2>Magic Eden Market</h2>
+    <p>Listings: <span class="value" id="meListings"></span></p>
+    <p>Sats per listing: <span class="value" id="meSatsPer"></span></p>
+    <p>Available sats on market: <span class="value" id="meAvailable"></span></p>
+    <p>Floor price per listing: <span class="value" id="meFloor"></span> BTC</p>
+    <p>Price per sat (approx): <span class="value" id="mePricePerSat"></span> USD</p>
+    <p>People per available pizza sat: <span class="value" id="peoplePerAvailable"></span></p>
+  </div>
+  <div class="card">
+    <h2>Assumed price per sat (USD)</h2>
+    <div class="value" id="priceValueLabel"></div>
+    <input id="priceRange" type="range" min="0" max="0.1" step="0.001" value="0.05">
+    <p>Total market value: <span class="value" id="marketValueLabel"></span></p>
+    <p>Value per person (USD): <span class="value" id="valuePerPerson"></span></p>
+  </div>
+  <div class="card">
+    <h2>Fun Facts</h2>
+    <p>Pizza sats per person: <span class="value" id="satsPerPerson"></span></p>
+    <p>People per pizza sat: <span class="value" id="peoplePerSat"></span></p>
+    <p>Value of 100 sats: <span class="value" id="valueOf100"></span></p>
+    <p>Years to collect them all (1 sat/day): <span class="value" id="collectYears"></span> years</p>
+  </div>
+</div>
+
+<footer>
+  <p>Data sources: world population 8.1 billion【195956501994828†L260-L262】; lost BTC estimate【749628174090867†L210-L219】; pizza sat supply【967502688293053†L12-L23】; Magic Eden listing stats (approx. 18 k listings, 549 sats/listing, 0.000006 BTC floor).</p>
+</footer>
+</div>
+
+<script>
+const SUPPLY = 1_000_000_000_000; // total pizza sats
+const WORLD_POP = 8.1e9; // world population 2025
+// Magic Eden stats (approx)
+const ME_LISTINGS = 18000;
+const ME_SATS_PER = 549;
+const ME_FLOOR_BTC = 0.000006;
+const BTC_USD = 60000; // approximate BTC price for calc
+
+const lostRange = document.getElementById('lostRange');
+const lostPercentLabel = document.getElementById('lostPercentLabel');
+const remainingCountLabel = document.getElementById('remainingCount');
+const marketShareLabel = document.getElementById('marketShareLabel');
+const meListingsLabel = document.getElementById('meListings');
+const meSatsPerLabel = document.getElementById('meSatsPer');
+const meAvailableLabel = document.getElementById('meAvailable');
+const meFloorLabel = document.getElementById('meFloor');
+const mePricePerSatLabel = document.getElementById('mePricePerSat');
+const peoplePerAvailableLabel = document.getElementById('peoplePerAvailable');
+const priceRange = document.getElementById('priceRange');
+const priceValueLabel = document.getElementById('priceValueLabel');
+const marketValueLabel = document.getElementById('marketValueLabel');
+const valuePerPerson = document.getElementById('valuePerPerson');
+const satsPerPerson = document.getElementById('satsPerPerson');
+const peoplePerSat = document.getElementById('peoplePerSat');
+const valueOf100 = document.getElementById('valueOf100');
+const collectYears = document.getElementById('collectYears');
+
+function numberWithCommas(x) {
+  return x.toLocaleString('en-US');
+}
+
+function update() {
+  const lostPercent = parseFloat(lostRange.value);
+  lostPercentLabel.textContent = lostPercent + '%';
+  const lostSats = SUPPLY * lostPercent / 100;
+  const remaining = SUPPLY - lostSats;
+  remainingCountLabel.textContent = numberWithCommas(Math.round(remaining));
+  const marketShare = (remaining / SUPPLY * 100).toFixed(2);
+  marketShareLabel.textContent = '(' + marketShare + '% of supply)';
+
+  // Magic Eden stats
+  meListingsLabel.textContent = numberWithCommas(ME_LISTINGS);
+  meSatsPerLabel.textContent = numberWithCommas(ME_SATS_PER);
+  const meAvailable = ME_LISTINGS * ME_SATS_PER;
+  meAvailableLabel.textContent = numberWithCommas(meAvailable);
+  meFloorLabel.textContent = ME_FLOOR_BTC.toFixed(6);
+  const pricePerSatApprox = (ME_FLOOR_BTC * BTC_USD) / ME_SATS_PER;
+  mePricePerSatLabel.textContent = '$' + pricePerSatApprox.toFixed(4);
+  const peoplePerAvailable = WORLD_POP / meAvailable;
+  peoplePerAvailableLabel.textContent = peoplePerAvailable.toFixed(2);
+
+  // price slider
+  const price = parseFloat(priceRange.value);
+  priceValueLabel.textContent = '$' + price.toFixed(3);
+  const marketValue = remaining * price;
+  marketValueLabel.textContent = '$' + numberWithCommas(Math.round(marketValue));
+  const perPerson = marketValue / WORLD_POP;
+  valuePerPerson.textContent = '$' + perPerson.toFixed(4);
+
+  const satsPerPersonValue = remaining / WORLD_POP;
+  satsPerPerson.textContent = satsPerPersonValue.toFixed(2);
+  peoplePerSat.textContent = (WORLD_POP / remaining).toFixed(2);
+
+  const value100 = 100 * price;
+  valueOf100.textContent = '$' + value100.toFixed(2);
+  const yearsToCollect = (remaining / 365).toFixed(0);
+  collectYears.textContent = numberWithCommas(yearsToCollect);
+}
+lostRange.addEventListener('input', update);
+priceRange.addEventListener('input', update);
+update();
+</script>
+</body>
+</html>
