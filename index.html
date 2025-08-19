@@ -16,7 +16,35 @@
   p {max-width:700px; line-height:1.6; margin-bottom:1rem;}
   .container {max-width:900px; margin:auto;}
   .cards {display:flex; flex-wrap:wrap; gap:20px;}
-  .card {background:rgba(255,255,255,0.1); padding:20px; border-radius:12px; flex:1 1 280px; min-width:260px;}
+  /* Card styling now uses a semi-transparent backdrop with blur and shadow for a more modern look */
+  .card {
+    background:rgba(255,255,255,0.1);
+    padding:20px;
+    border-radius:12px;
+    flex:1 1 280px;
+    min-width:260px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.2);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+
+  /* Button style used for the faucet claim button */
+  .button {
+    display:inline-block;
+    margin-top:10px;
+    padding:10px 16px;
+    background:linear-gradient(135deg,#f39c12,#e74c3c);
+    color:#fff;
+    text-align:center;
+    border:none;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.3s ease;
+  }
+  .button:hover {
+    background:linear-gradient(135deg,#e74c3c,#c0392b);
+  }
   .card h2 {font-size:1.2rem; margin-bottom:0.5rem;}
   .value {font-size:1.5rem; font-weight:600; color:#f1c40f;}
   label {display:block; margin-top:10px;}
@@ -28,14 +56,14 @@
 <body>
 <div class="container">
   <h1>Pizza Sats Insights</h1>
-  <p>Explore the scarcity and value of <strong>pizza sats</strong>—the satoshis spent in the legendary 10 000 BTC pizza transaction on May 22 2010【420842018258477†L108-L112】. There are 1 trillion pizza sats in existence【967502688293053†L12-L23】. Use the sliders to adjust assumptions, view market stats and see how they stack up per person.</p>
+  <p>Explore the scarcity and value of <strong>pizza sats</strong>—the satoshis spent in the legendary 10 000 BTC pizza transaction on May 22 2010.  There are an estimated <strong>1 trillion</strong> pizza sats in existence.  Use the sliders below to adjust assumptions, view market stats and see how they stack up per person.  All figures shown are for educational fun and not financial advice.</p>
 
 <div class="cards">
   <div class="card">
     <h2>Lost Supply (%)</h2>
     <div class="value" id="lostPercentLabel"></div>
     <input id="lostRange" type="range" min="0" max="30" step="1" value="15">
-    <p>Estimated lost bitcoins range 11–18 % 【749628174090867†L210-L219】. Adjust to estimate lost pizza sats.</p>
+    <p>Estimated lost bitcoins range 11–18 %. Adjust this slider to estimate how many pizza sats may be out of reach.</p>
     <h3>Remaining pizza sats</h3>
     <div class="value" id="remainingCount"></div>
     <p id="marketShareLabel"></p>
@@ -48,6 +76,7 @@
     <p>Floor price per listing: <span class="value" id="meFloor"></span> BTC</p>
     <p>Price per sat (approx): <span class="value" id="mePricePerSat"></span> USD</p>
     <p>People per available pizza sat: <span class="value" id="peoplePerAvailable"></span></p>
+    <p><a href="https://magiceden.io/ordinals/marketplace/rare-sats?selectedAttributes=%7B%22satributes%22%3A%5B%7B%22value%22%3A%22Pizza%22,%22label%22%3A%22Pizza%22,%22imageElement%22%3A%7B%22key%22:null,%22ref%22:null,%22props%22%3A%7B%22satribute%22%3A%22Pizza%22,%22className%22%3A%22size-full%22%7D,%22_owner%22:null%7D,%22floor%22%3A%22%3C+0.00001%22,%22listedPercentage%22:%22%22%7D%5D%7D" target="_blank">View on Magic Eden</a></p>
   </div>
   <div class="card">
     <h2>Assumed price per sat (USD)</h2>
@@ -63,10 +92,25 @@
     <p>Value of 100 sats: <span class="value" id="valueOf100"></span></p>
     <p>Years to collect them all (1 sat/day): <span class="value" id="collectYears"></span> years</p>
   </div>
+
+  <!-- Bitcoin price card -->
+  <div class="card">
+    <h2>Bitcoin Price</h2>
+    <p>Current BTC price: <span class="value" id="btcPriceValue">$…</span></p>
+    <p><small>Price fetched from a public API (updates periodically)</small></p>
+  </div>
+
+  <!-- Fun faucet card -->
+  <div class="card">
+    <h2>Pizza Sat Faucet</h2>
+    <p>Your sat balance: <span class="value" id="mySatBalance">0</span></p>
+    <button class="button" onclick="claimSat()">Claim 1&nbsp;sat</button>
+    <p><small>Just for fun — claim a sat with each click (not real Bitcoin)</small></p>
+  </div>
 </div>
 
 <footer>
-  <p>Data sources: world population 8.1 billion【195956501994828†L260-L262】; lost BTC estimate【749628174090867†L210-L219】; pizza sat supply【967502688293053†L12-L23】; Magic Eden listing stats (approx. 18 k listings, 549 sats/listing, 0.000006 BTC floor).</p>
+  <p><strong>Data sources:</strong> world population estimated at 8.1 billion (2025 projection); lost bitcoin estimates range 11–18 % of supply; pizza sat supply estimated at 1 trillion sats; Magic Eden rare‑sats marketplace stats (≈18 k listings, 549 sats/listing, 0.000006 BTC floor).</p>
 </footer>
 </div>
 
@@ -78,6 +122,10 @@ const ME_LISTINGS = 18000;
 const ME_SATS_PER = 549;
 const ME_FLOOR_BTC = 0.000006;
 const BTC_USD = 60000; // approximate BTC price for calc
+
+// Variables for dynamic bitcoin price and faucet
+let btcPrice = null; // will be updated by fetchBTC()
+let mySats = 0;
 
 const lostRange = document.getElementById('lostRange');
 const lostPercentLabel = document.getElementById('lostPercentLabel');
@@ -98,6 +146,10 @@ const peoplePerSat = document.getElementById('peoplePerSat');
 const valueOf100 = document.getElementById('valueOf100');
 const collectYears = document.getElementById('collectYears');
 
+// Bitcoin price and faucet elements
+const btcPriceValue = document.getElementById('btcPriceValue');
+const mySatBalance = document.getElementById('mySatBalance');
+
 function numberWithCommas(x) {
   return x.toLocaleString('en-US');
 }
@@ -117,7 +169,9 @@ function update() {
   const meAvailable = ME_LISTINGS * ME_SATS_PER;
   meAvailableLabel.textContent = numberWithCommas(meAvailable);
   meFloorLabel.textContent = ME_FLOOR_BTC.toFixed(6);
-  const pricePerSatApprox = (ME_FLOOR_BTC * BTC_USD) / ME_SATS_PER;
+  // use live BTC price if available
+  const btcValue = btcPrice !== null ? btcPrice : BTC_USD;
+  const pricePerSatApprox = (ME_FLOOR_BTC * btcValue) / ME_SATS_PER;
   mePricePerSatLabel.textContent = '$' + pricePerSatApprox.toFixed(4);
   const peoplePerAvailable = WORLD_POP / meAvailable;
   peoplePerAvailableLabel.textContent = peoplePerAvailable.toFixed(2);
@@ -139,9 +193,44 @@ function update() {
   const yearsToCollect = (remaining / 365).toFixed(0);
   collectYears.textContent = numberWithCommas(yearsToCollect);
 }
+
+// Fetch bitcoin price from public API (Coingecko). Fallback to BTC_USD on failure
+async function fetchBTC() {
+  try {
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const data = await response.json();
+    if (data.bitcoin && data.bitcoin.usd) {
+      btcPrice = data.bitcoin.usd;
+      // update display with integer formatting
+      btcPriceValue.textContent = '$' + btcPrice.toLocaleString('en-US', {maximumFractionDigits: 0});
+      // update dependent calculations
+      update();
+      return;
+    }
+  } catch (e) {
+    // ignore
+  }
+  // fallback
+  btcPriceValue.textContent = '$' + BTC_USD.toLocaleString('en-US', {maximumFractionDigits: 0});
+}
+
+// Initialize bitcoin price and update regularly
+function initBTCPrice() {
+  fetchBTC();
+  // refresh every 2 minutes
+  setInterval(fetchBTC, 120000);
+}
+
+// Fun faucet: increments the sat balance
+function claimSat() {
+  mySats += 1;
+  mySatBalance.textContent = numberWithCommas(mySats);
+}
 lostRange.addEventListener('input', update);
 priceRange.addEventListener('input', update);
 update();
+// kick off bitcoin price fetch and periodic updates
+initBTCPrice();
 </script>
 </body>
 </html>
