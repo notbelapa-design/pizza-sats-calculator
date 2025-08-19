@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Sats Fun Calculator 🍕</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #fafafa;
+  color: #333;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+h1 {
+  color: #d04127;
+  margin-top: 0;
+}
+.stat-box {
+  background: #fff3e3;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.stat-box h2 {
+  margin-top: 0;
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.input-row label {
+  flex: 1;
+}
+.input-row input[type=range] {
+  flex: 2;
+  margin-left: 10px;
+}
+.value {
+  font-weight: bold;
+  margin-left: 8px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Pizza Sats Fun Calculator 🍕</h1>
+  <p>Pizza sats are satoshis from the famous 10,000 BTC purchase of two pizzas on May 22, 2010. According to satribute data, there are 1 trillion pizza sats in total. Use this tool to explore scarcity and imagine fun valuations.</p>
+
+  <div class="stat-box">
+    <h2>Supply &amp; Loss Assumptions</h2>
+    <div class="input-row">
+      <label for="lostRange">Lost pizza sats (%):</label>
+      <input id="lostRange" type="range" min="0" max="50" value="15">
+      <span id="lostPercent" class="value">15%</span>
+    </div>
+    <div>Estimated lost pizza sats: <span id="lostCount" class="value"></span></div>
+    <div>Remaining pizza sats: <span id="remainingCount" class="value"></span></div>
+  </div>
+
+  <div class="stat-box">
+    <h2>Value Assumptions</h2>
+    <div class="input-row">
+      <label for="priceRange">Hypothetical price per pizza sat (USD):</label>
+      <input id="priceRange" type="range" min="0" max="1" step="0.01" value="0.05">
+      <span id="priceValue" class="value">$0.05</span>
+    </div>
+    <div>Total market value: <span id="marketValue" class="value"></span></div>
+    <div>Value per person (world population ≈ 8.1 billion): <span id="valuePerPerson" class="value"></span></div>
+  </div>
+
+  <div class="stat-box">
+    <h2>Distribution Fun</h2>
+    <div>Pizza sats per person: <span id="perPerson" class="value"></span></div>
+    <div>People per pizza sat: <span id="peoplePerSat" class="value"></span></div>
+  </div>
+
+  <div class="stat-box">
+    <h2>Collector Fun Facts</h2>
+    <p>If you owned 100 pizza sats, they'd be worth <span id="valueOf100" class="value"></span> at your chosen price. If you collected one pizza sat every day, it would take you <span id="collectYears" class="value"></span> years to collect all remaining pizza sats!</p>
+  </div>
+</div>
+
+<script>
+const SUPPLY = 1000000000000; // total number of pizza sats
+const WORLD_POP = 8.1e9; // world population (approx)
+const lostRange = document.getElementById('lostRange');
+const lostPercentLabel = document.getElementById('lostPercent');
+const lostCountLabel = document.getElementById('lostCount');
+const remainingCountLabel = document.getElementById('remainingCount');
+const priceRange = document.getElementById('priceRange');
+const priceValueLabel = document.getElementById('priceValue');
+const marketValueLabel = document.getElementById('marketValue');
+const valuePerPersonLabel = document.getElementById('valuePerPerson');
+const perPersonLabel = document.getElementById('perPerson');
+const peoplePerSatLabel = document.getElementById('peoplePerSat');
+const valueOf100Label = document.getElementById('valueOf100');
+const collectYearsLabel = document.getElementById('collectYears');
+
+function numberWithCommas(x) {
+  return x.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function update() {
+  const lostPercent = parseFloat(lostRange.value);
+  lostPercentLabel.textContent = lostPercent + '%';
+  const lostCount = SUPPLY * lostPercent / 100;
+  const remaining = SUPPLY - lostCount;
+  lostCountLabel.textContent = numberWithCommas(Math.round(lostCount));
+  remainingCountLabel.textContent = numberWithCommas(Math.round(remaining));
+
+  const price = parseFloat(priceRange.value);
+  priceValueLabel.textContent = '$' + price.toFixed(2);
+  const marketValue = remaining * price;
+  marketValueLabel.textContent = '$' + numberWithCommas(marketValue.toFixed(2));
+
+  const valuePerPerson = marketValue / WORLD_POP;
+  valuePerPersonLabel.textContent = '$' + valuePerPerson.toFixed(2);
+
+  const satsPerPerson = remaining / WORLD_POP;
+  perPersonLabel.textContent = numberWithCommas(satsPerPerson.toFixed(2));
+
+  const peoplePerSat = WORLD_POP / remaining;
+  peoplePerSatLabel.textContent = peoplePerSat.toFixed(3);
+
+  const valueOf100 = 100 * price;
+  valueOf100Label.textContent = '$' + valueOf100.toFixed(2);
+
+  const yearsToCollect = (remaining / 365) / 365; // one sat per day; convert days to years
+  collectYearsLabel.textContent = numberWithCommas(yearsToCollect.toFixed(0));
+}
+
+lostRange.addEventListener('input', update);
+priceRange.addEventListener('input', update);
+update();
+</script>
+</body>
+</html>
